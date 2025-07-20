@@ -76,89 +76,28 @@ class _EmptyListWidgetState extends State<EmptyListWidget>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Animated illustration
-              ScaleTransition(
-                scale: _bounceAnimation,
-                child: Container(
-                  width: 40.w,
-                  height: 40.w,
-                  decoration: BoxDecoration(
-                    color: AppTheme.lightTheme.colorScheme.primaryContainer,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Background circle
-                      Container(
-                        width: 30.w,
-                        height: 30.w,
-                        decoration: BoxDecoration(
-                          color: AppTheme.lightTheme.colorScheme.primary
-                              .withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-
-                      // Shopping cart icon
-                      CustomIconWidget(
-                        iconName: 'shopping_cart',
-                        color: AppTheme.lightTheme.colorScheme.primary,
-                        size: 60,
-                      ),
-
-                      // Plus icon overlay
-                      Positioned(
-                        bottom: 8.w,
-                        right: 8.w,
-                        child: Container(
-                          width: 8.w,
-                          height: 8.w,
-                          decoration: BoxDecoration(
-                            color: AppTheme.successLight,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppTheme.lightTheme.colorScheme.surface,
-                              width: 2,
-                            ),
-                          ),
-                          child: CustomIconWidget(
-                            iconName: 'add',
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              CustomIconWidget(
+                iconName: 'shopping_cart',
+                color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
+                size: 64,
               ),
-
-              SizedBox(height: 4.h),
-
-              // Main message
+              SizedBox(height: 2.h),
               Text(
                 'Your list is empty',
                 style: AppTheme.lightTheme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
                   color: AppTheme.lightTheme.colorScheme.onSurface,
                 ),
-                textAlign: TextAlign.center,
               ),
-
-              SizedBox(height: 2.h),
-
-              // Subtitle
+              SizedBox(height: 1.h),
               Text(
-                'Add your first item to get started with your shopping list',
-                style: AppTheme.lightTheme.textTheme.bodyLarge?.copyWith(
+                'Add products by tapping the + button below',
+                style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
                   color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
                 ),
                 textAlign: TextAlign.center,
               ),
-
               SizedBox(height: 4.h),
-
-              // Add first item button
               ElevatedButton.icon(
                 onPressed: widget.onAddFirstItem,
                 icon: CustomIconWidget(
@@ -167,64 +106,6 @@ class _EmptyListWidgetState extends State<EmptyListWidget>
                   size: 20,
                 ),
                 label: Text('Add Your First Item'),
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 8.w,
-                    vertical: 2.h,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                ),
-              ),
-
-              SizedBox(height: 3.h),
-
-              // Quick tips
-              Container(
-                padding: EdgeInsets.all(4.w),
-                decoration: BoxDecoration(
-                  color:
-                      AppTheme.lightTheme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        CustomIconWidget(
-                          iconName: 'lightbulb',
-                          color: AppTheme.warningLight,
-                          size: 20,
-                        ),
-                        SizedBox(width: 2.w),
-                        Text(
-                          'Quick Tips',
-                          style: AppTheme.lightTheme.textTheme.titleSmall
-                              ?.copyWith(
-                            color: AppTheme.warningLight,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 2.h),
-                    _buildTipItem(
-                      icon: 'qr_code_scanner',
-                      text: 'Scan barcodes to quickly add products',
-                    ),
-                    SizedBox(height: 1.h),
-                    _buildTipItem(
-                      icon: 'history',
-                      text: 'Browse recent items for faster shopping',
-                    ),
-                    SizedBox(height: 1.h),
-                    _buildTipItem(
-                      icon: 'calculate',
-                      text: 'Track your total spending automatically',
-                    ),
-                  ],
-                ),
               ),
             ],
           ),

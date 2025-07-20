@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
+import '../../services/product_service.dart';
 import './widgets/add_item_bottom_sheet.dart';
 import './widgets/empty_list_widget.dart';
 import './widgets/list_header_widget.dart';
@@ -25,79 +26,21 @@ class _ShoppingListDetailState extends State<ShoppingListDetail>
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchTextController = TextEditingController();
 
-  String _listName = 'Weekly Groceries';
+  String _listName = 'New Shopping List';
   bool _showSearch = false;
   bool _isMultiSelectMode = false;
   String _searchQuery = '';
   Set<String> _selectedItems = {};
 
-  // Mock shopping list data
-  List<Map<String, dynamic>> _shoppingItems = [
-    {
-      'id': 'item_1',
-      'name': 'Organic Bananas',
-      'price': 2.99,
-      'quantity': 3,
-      'category': 'Fruits',
-      'isCompleted': false,
-      'image':
-          'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop',
-    },
-    {
-      'id': 'item_2',
-      'name': 'Greek Yogurt',
-      'price': 4.49,
-      'quantity': 2,
-      'category': 'Dairy',
-      'isCompleted': true,
-      'image':
-          'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=400&fit=crop',
-    },
-    {
-      'id': 'item_3',
-      'name': 'Whole Wheat Bread',
-      'price': 3.29,
-      'quantity': 1,
-      'category': 'Bakery',
-      'isCompleted': false,
-      'image':
-          'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=400&fit=crop',
-    },
-    {
-      'id': 'item_4',
-      'name': 'Extra Virgin Olive Oil',
-      'price': 8.99,
-      'quantity': 1,
-      'category': 'Pantry',
-      'isCompleted': false,
-      'image':
-          'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400&h=400&fit=crop',
-    },
-    {
-      'id': 'item_5',
-      'name': 'Fresh Salmon Fillet',
-      'price': 12.99,
-      'quantity': 1,
-      'category': 'Seafood',
-      'isCompleted': false,
-      'image':
-          'https://images.unsplash.com/photo-1544943910-4c1dc44aab44?w=400&h=400&fit=crop',
-    },
-    {
-      'id': 'item_6',
-      'name': 'Organic Spinach',
-      'price': 3.49,
-      'quantity': 2,
-      'category': 'Vegetables',
-      'isCompleted': true,
-      'image':
-          'https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=400&h=400&fit=crop',
-    },
-  ];
+  // Start with empty shopping list
+  List<Map<String, dynamic>> _shoppingItems = [];
 
   @override
   void initState() {
     super.initState();
+
+    // Initialize ProductService
+    ProductService.instance.loadProducts();
 
     _fabController = AnimationController(
       duration: const Duration(milliseconds: 300),
@@ -174,7 +117,9 @@ class _ShoppingListDetailState extends State<ShoppingListDetail>
 
   double get _totalCost {
     return _shoppingItems.fold(0.0, (sum, item) {
-      final price = (item['price'] as num).toDouble();
+      // Get the price from ProductService
+      final productName = item['name'] as String;
+      final price = ProductService.instance.getProductPrice(productName);
       final quantity = item['quantity'] as int;
       return sum + (price * quantity);
     });
@@ -226,8 +171,25 @@ class _ShoppingListDetailState extends State<ShoppingListDetail>
   }
 
   void _onItemAdded(Map<String, dynamic> newItem) {
+    // Get product details from ProductService
+    final productName = newItem['name'] as String;
+    final productDetails =
+        ProductService.instance.getProductDetails(productName);
+
+    // Create item with automatic price lookup
+    final itemToAdd = {
+      'id': 'item_${DateTime.now().millisecondsSinceEpoch}',
+      'name': productName,
+      'price': productDetails?.price ?? 0.00,
+      'quantity': newItem['quantity'] ?? 1,
+      'category': productDetails?.category ?? 'Other',
+      'isCompleted': false,
+      'image': productDetails?.image ??
+          'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=400&h=400&fit=crop',
+    };
+
     setState(() {
-      _shoppingItems.add(newItem);
+      _shoppingItems.add(itemToAdd);
     });
   }
 

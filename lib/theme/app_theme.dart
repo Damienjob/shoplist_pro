@@ -349,7 +349,8 @@ class AppTheme {
       selectedTileColor: primaryLight.withAlpha(26),
       iconColor: textSecondaryLight,
       textColor: textPrimaryLight,
-    ), dialogTheme: DialogThemeData(backgroundColor: surfaceLight),
+    ),
+    dialogTheme: DialogThemeData(backgroundColor: surfaceLight),
   );
 
   /// Dark theme configuration
@@ -652,7 +653,8 @@ class AppTheme {
       selectedTileColor: primaryDark.withAlpha(51),
       iconColor: textSecondaryDark,
       textColor: textPrimaryDark,
-    ), dialogTheme: DialogThemeData(backgroundColor: surfaceDark),
+    ),
+    dialogTheme: DialogThemeData(backgroundColor: surfaceDark),
   );
 
   /// Helper method to build text theme using Inter font family

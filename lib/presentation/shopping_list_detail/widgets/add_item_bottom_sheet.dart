@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../core/app_export.dart';
+import '../../../services/product_service.dart';
 
 class AddItemBottomSheet extends StatefulWidget {
   final Function(Map<String, dynamic>) onItemAdded;
@@ -21,7 +22,6 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet>
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _priceController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
 
   String _selectedCategory = 'Groceries';
@@ -39,48 +39,17 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet>
     'Other'
   ];
 
-  final List<Map<String, dynamic>> _recentProducts = [
-    {
-      'id': 'recent_1',
-      'name': 'Organic Bananas',
-      'price': 2.99,
-      'category': 'Groceries',
-      'image':
-          'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop',
-    },
-    {
-      'id': 'recent_2',
-      'name': 'Greek Yogurt',
-      'price': 4.49,
-      'category': 'Groceries',
-      'image':
-          'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=400&fit=crop',
-    },
-    {
-      'id': 'recent_3',
-      'name': 'Whole Wheat Bread',
-      'price': 3.29,
-      'category': 'Groceries',
-      'image':
-          'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=400&fit=crop',
-    },
-    {
-      'id': 'recent_4',
-      'name': 'Olive Oil',
-      'price': 8.99,
-      'category': 'Groceries',
-      'image':
-          'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400&h=400&fit=crop',
-    },
-  ];
-
-  List<Map<String, dynamic>> _searchResults = [];
+  List<Product> _searchResults = [];
+  List<Product> _recentProducts = [];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _searchController.addListener(_onSearchChanged);
+
+    // Load recent products from ProductService
+    _recentProducts = ProductService.instance.getRecentProducts();
   }
 
   @override
@@ -88,13 +57,12 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet>
     _tabController.dispose();
     _searchController.dispose();
     _nameController.dispose();
-    _priceController.dispose();
     _categoryController.dispose();
     super.dispose();
   }
 
   void _onSearchChanged() {
-    final query = _searchController.text.toLowerCase();
+    final query = _searchController.text;
     if (query.isEmpty) {
       setState(() {
         _searchResults = [];
@@ -105,11 +73,7 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet>
 
     setState(() {
       _isSearching = true;
-      _searchResults = _recentProducts
-          .where((product) =>
-              (product['name'] as String).toLowerCase().contains(query) ||
-              (product['category'] as String).toLowerCase().contains(query))
-          .toList();
+      _searchResults = ProductService.instance.searchProducts(query);
     });
   }
 
@@ -121,17 +85,10 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet>
       return;
     }
 
-    final price = double.tryParse(_priceController.text) ?? 0.0;
-
+    // Only pass name and quantity - price will be looked up automatically
     final newItem = {
-      'id': 'custom_${DateTime.now().millisecondsSinceEpoch}',
       'name': _nameController.text.trim(),
-      'price': price,
-      'category': _selectedCategory,
       'quantity': _quantity,
-      'isCompleted': false,
-      'image':
-          'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=400&h=400&fit=crop',
     };
 
     widget.onItemAdded(newItem);
@@ -143,17 +100,19 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet>
     );
   }
 
-  void _addRecentItem(Map<String, dynamic> item) {
-    final newItem = Map<String, dynamic>.from(item);
-    newItem['quantity'] = 1;
-    newItem['isCompleted'] = false;
+  void _addProductItem(Product product) {
+    // Only pass name and quantity - price will be looked up automatically
+    final newItem = {
+      'name': product.name,
+      'quantity': 1,
+    };
 
     widget.onItemAdded(newItem);
     Navigator.pop(context);
 
     HapticFeedback.lightImpact();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${item['name']} added to list')),
+      SnackBar(content: Text('${product.name} added to list')),
     );
   }
 
@@ -397,24 +356,11 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet>
 
           SizedBox(height: 2.h),
 
-          // Price
-          TextField(
-            controller: _priceController,
-            keyboardType: TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              labelText: 'Price',
-              hintText: '0.00',
-              prefixText: '\$ ',
-            ),
-          ),
-
-          SizedBox(height: 2.h),
-
-          // Category dropdown
+          // Category dropdown (optional - for better organization)
           DropdownButtonFormField<String>(
             value: _selectedCategory,
             decoration: InputDecoration(
-              labelText: 'Category',
+              labelText: 'Category (Optional)',
             ),
             items: _categories.map((category) {
               return DropdownMenuItem(
@@ -512,27 +458,27 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet>
     );
   }
 
-  Widget _buildProductTile(Map<String, dynamic> product) {
+  Widget _buildProductTile(Product product) {
     return Card(
       margin: EdgeInsets.only(bottom: 2.h),
       child: ListTile(
         leading: ClipRRect(
           borderRadius: BorderRadius.circular(8),
           child: CustomImageWidget(
-            imageUrl: product['image'] ?? '',
+            imageUrl: product.image ?? '',
             width: 12.w,
             height: 12.w,
             fit: BoxFit.cover,
           ),
         ),
         title: Text(
-          product['name'] ?? '',
+          product.name,
           style: AppTheme.lightTheme.textTheme.titleMedium,
         ),
         subtitle: Row(
           children: [
             Text(
-              '\$${(product['price'] as num).toStringAsFixed(2)}',
+              '\$${product.price.toStringAsFixed(2)}',
               style: AppTheme.priceTextStyle(isLight: true),
             ),
             SizedBox(width: 2.w),
@@ -543,14 +489,14 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet>
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                product['category'] ?? '',
+                product.category,
                 style: AppTheme.lightTheme.textTheme.labelSmall,
               ),
             ),
           ],
         ),
         trailing: IconButton(
-          onPressed: () => _addRecentItem(product),
+          onPressed: () => _addProductItem(product),
           icon: CustomIconWidget(
             iconName: 'add_circle',
             color: AppTheme.lightTheme.colorScheme.primary,
